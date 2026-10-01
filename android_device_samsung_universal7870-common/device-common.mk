@@ -385,7 +385,24 @@ PRODUCT_PACKAGES += \
 PRODUCT_PACKAGES += \
     libprotobuf-cpp-full-vendorcompat \
     libprotobuf-cpp-lite-vendorcompat \
-    libxml2
+    libxml2 \
+    libxml2.vendor
+
+# Runtime dependencies of the prebuilt Samsung RIL stack (rild /
+# libril-samsung.so / libsec-ril.so). The prebuilts are shipped with
+# check_elf_files disabled, so the build graph never learns about their
+# DT_NEEDED entries and no vendor variants of these libraries were
+# installed into /vendor/lib64. The result was rild dying silently at
+# the dynamic linker (exit 1 before main() ever ran). librilutils is a
+# vendor-only module that nothing else pulls in, and the .vendor
+# variants of the vendor_available system libraries are only installed
+# when a vendor module needs them - so request them explicitly.
+PRODUCT_PACKAGES += \
+    libcrypto \
+    libcrypto.vendor \
+    libnetutils.vendor \
+    librilutils \
+    libsqlite.vendor
 
 # Filesystem tools for resizing system partitions
 PRODUCT_PACKAGES += \

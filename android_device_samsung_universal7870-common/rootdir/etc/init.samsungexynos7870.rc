@@ -5,6 +5,16 @@ on early-init
 on init
     start watchdogd
 
+    # AOSP 15 starts every process with RLIMIT_RTPRIO 0, so any
+    # sched_setscheduler(SCHED_FIFO) call fails with EPERM unless the
+    # process is privileged. The Bluetooth stack (com.android.bluetooth,
+    # a zygote child) treats that as fatal and aborts on startup
+    # ("unable to enable real time scheduling"), and SurfaceFlinger /
+    # sensors log SCHED_FIFO failures too. Granting a modest real-time
+    # priority ceiling here makes init pass the limit on to every process
+    # it spawns, including the zygote and everything forked from it.
+    setrlimit rtprio 12 12
+
     # See storage config details at http://source.android.com/tech/storage/
     mkdir /mnt/shell/emulated 0700 shell shell
     # NOTE: "mkdir /storage/emulated" and "symlink /sdcard /mnt/sdcard" were
