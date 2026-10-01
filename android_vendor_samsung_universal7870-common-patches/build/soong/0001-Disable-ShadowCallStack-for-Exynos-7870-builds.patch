@@ -1,0 +1,73 @@
+From 6a6b1d62981fe33f5667abb7ec8c32e685f02eb0 Mon Sep 17 00:00:00 2001
+From: FlominatorGD <75490337+FlominatorGD@users.noreply.github.com>
+Date: Thu, 1 Oct 2026 01:37:53 +0000
+Subject: [PATCH] Disable ShadowCallStack for Exynos 7870 builds
+
+The vendor GL driver blob shipped for the Exynos 7870 devices
+(libGLES_mali.so, built for the stock 8.0 firmware with clang 6.0.2) uses
+x18 as a general-purpose register: its .text contains 872 references to
+x18.  bionic stores the ShadowCallStack pointer in x18
+(__init_shadow_call_stack() is the only writer), so the blob destroys the
+shadow stack pointer of every process it runs in -- and it does run
+in-process, the graphics driver is preloaded by zygote unless
+ro.zygote.disable_gl_preload is set, which this device does not.
+
+The next SCS prologue then stores to [x18, ...] with x18 == 0 and the
+process dies with a SIGSEGV/SEGV_MAPERR at address 0x0.  This is what the
+boot log shows for the only two SCS-built modules of the build
+(packages/modules/Bluetooth android/app and packages/apps/Nfc nci/jni):
+
+  F libc: Fatal signal 11 (SIGSEGV), code 1 (SEGV_MAPERR), fault addr 0x0
+  #00 pc .../libbluetooth_jni.so (__system_property_get+0)
+  #01 pc .../libbluetooth_jni.so (__init_cpu_features+44)
+  ...
+  #00 pc .../libnfc_nci_jni.so (_GLOBAL__sub_I_HciEventManager.cpp+0)
+
+Both modules are loaded by their app process (com.android.bluetooth,
+com.android.nfc) right at start, so the crash loops kill Bluetooth and
+NFC on every boot.
+
+AOSP only recommends SCS for self-contained components that never run
+next to legacy code (source.android.com/docs/security/test/shadow-call-stack),
+which is not the case on these devices, so disable SCS for the whole
+build instead of chasing individual modules.  SCS can be turned back on
+if the vendor GL driver is ever replaced.
+---
+ cc/sanitize.go | 24 ++++++++++++++++++++++++
+ 1 file changed, 24 insertions(+)
+
+diff --git a/cc/sanitize.go b/cc/sanitize.go
+index d8d8c7a..9284ed9 100644
+--- a/cc/sanitize.go
++++ b/cc/sanitize.go
+@@ -645,6 +645,30 @@ func (sanitize *sanitize) begin(ctx BaseModuleContext) {
+ 		s.Scs = nil
+ 	}
+ 
++	// The vendor GL driver blob shipped for the Exynos 7870 devices
++	// (libGLES_mali.so, built for the stock 8.0 firmware with clang 6.0.2)
++	// uses x18 as a general-purpose register: its .text contains 872
++	// references to x18.  bionic stores the ShadowCallStack pointer in x18
++	// (__init_shadow_call_stack() is the only writer), so the blob destroys
++	// the shadow stack pointer of every process it runs in -- and it does run
++	// in-process, the graphics driver is preloaded by zygote unless
++	// ro.zygote.disable_gl_preload is set, which this device does not.
++	//
++	// The next SCS prologue then stores to [x18, ...] with x18 == 0 and the
++	// process dies with a SIGSEGV/SEGV_MAPERR at address 0x0.  This is what
++	// the boot log shows for the only two SCS-built modules of the build
++	// (packages/modules/Bluetooth android/app and packages/apps/Nfc nci/jni):
++	//
++	//   #00 pc .../libbluetooth_jni.so (__system_property_get+0)
++	//   #01 pc .../libbluetooth_jni.so (__init_cpu_features+44)
++	//   #00 pc .../libnfc_nci_jni.so (_GLOBAL__sub_I_HciEventManager.cpp+0)
++	//
++	// AOSP only recommends SCS for self-contained components that never run
++	// next to legacy code (source.android.com/docs/security/test/shadow-call-stack),
++	// which is not the case on these devices, so disable SCS for the whole
++	// build instead of chasing individual modules.
++	s.Scs = nil
++
+ 	// Memtag_heap is only implemented on AArch64.
+ 	// Memtag ABI is Android specific for now, so disable for host.
+ 	if ctx.Arch().ArchType != android.Arm64 || !ctx.toolchain().Bionic() || ctx.Host() {

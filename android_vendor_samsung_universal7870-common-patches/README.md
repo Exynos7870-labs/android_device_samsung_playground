@@ -56,6 +56,17 @@ cd ~/android/system
 . ~/patches/revert.sh
 ```
 
+## Notes
+
+* `build/soong/0001-Disable-ShadowCallStack-for-Exynos-7870-builds.patch` turns
+  ShadowCallStack off for the whole build.  The vendor GL driver blob of the
+  7870 devices (`libGLES_mali.so`, built with the stock 8.0 toolchain) uses
+  x18 as a general-purpose register and destroys the shadow stack pointer of
+  every process it runs in.  As a result `com.android.bluetooth` and
+  `com.android.nfc` crashed in a loop on every boot (`SIGSEGV`, `x18 == 0`
+  in the tombstone register dump).  SCS can be re-enabled if the GL driver is
+  ever replaced.
+
 Have fun!
 
 These patches were last tested on:
