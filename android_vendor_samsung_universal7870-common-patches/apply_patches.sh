@@ -38,6 +38,7 @@ REPO_ROOT=$(get_repo_root 2>/dev/null || echo "")
 # Mapping from patch directory (relative to this repo) to repo project path
 declare -A PATCH_MAP=(
     ["build/make"]="build/make"
+    ["build/soong"]="build/soong"
     ["frameworks/av"]="frameworks/av"
     ["frameworks/base"]="frameworks/base"
     ["frameworks/native"]="frameworks/native"
