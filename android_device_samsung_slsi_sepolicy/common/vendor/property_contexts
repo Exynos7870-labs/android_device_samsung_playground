@@ -1,0 +1,28 @@
+### cbd
+vendor.cbd.                    u:object_r:vendor_cbd_prop:s0
+persist.vendor.cbd.            u:object_r:vendor_radio_prop:s0
+
+### hwc
+persist.vendor.display.        u:object_r:vendor_hwc_prop:s0
+vendor.display.                u:object_r:vendor_hwc_prop:s0
+
+### radio
+ro.vendor.multisim.            u:object_r:vendor_radio_prop:s0
+ro.vendor.radio.               u:object_r:vendor_radio_prop:s0
+
+### fastcharge
+persist.vendor.sec.fastchg_enabled     u:object_r:vendor_fastcharge_prop:s0
+
+## gnss
+vendor.gnss.                   u:object_r:vendor_gnss_prop:s0
+
+## thermal
+vendor.thermal.                u:object_r:vendor_thermal_prop:s0
+
+## vaultkeeper
+ro.vendor.security.vaultkeeper u:object_r:vendor_vaultkeeper_prop:s0
+vendor.security.vaultkeeper    u:object_r:vendor_vaultkeeper_prop:s0
+
+### wifi
+vendor.wifi.                   u:object_r:vendor_wifi_prop:s0
+ro.vendor.wifi.                u:object_r:vendor_wifi_prop:s0

@@ -1,0 +1,16 @@
+# FM Radio (Silicon Labs Si47xx)
+/dev/radio0                  u:object_r:fm_radio_device:s0
+
+# Shimmed vendor library libbauthserver (LD_SHIM_LIBS target, linker probes it in every domain)
+/vendor/lib(64)?/libbauthserver\.so                     u:object_r:vendor_public_lib_file:s0
+
+# Source-built NFC HAL (hardware/samsung/nfc) - the label the common tree
+# only gives to the samsung binary NFC service
+/(vendor|system/vendor)/bin/hw/android\.hardware\.nfc@1\.2-service\.samsung            u:object_r:hal_nfc_default_exec:s0
+# QCA9377 Bluetooth - wcnss_filter daemon (started by libbt-vendor via
+# vendor.wc_transport.start_hci, proxies the initial combo-chip HCI setup)
+/(vendor|system/vendor)/bin/wcnss_filter            u:object_r:wcnss_filter_exec:s0
+# QCA9377 combo chip UART (Exynos 7870 UART0)
+/dev/ttySAC0                                          u:object_r:bluetooth_device:s0
+# /dev/rfkill is already labeled rfkill_device by u7870-common sepolicy;
+# do not duplicate the spec here (checkfc rejects identical specs).

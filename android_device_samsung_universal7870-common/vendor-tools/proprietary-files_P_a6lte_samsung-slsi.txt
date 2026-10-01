@@ -1,0 +1,9 @@
+###FILE###:proprietary-files_P_a6lte_samsung-slsi.txt
+# hwcservice, display, mpp you name it... files that are speciffic to our device and canot be sourced from 7880
+vendor/lib/libexynosdisplay.so
+vendor/lib/libExynosHWCService.so
+vendor/lib/libhdmi.so
+vendor/lib/libhwcutils.so
+vendor/lib/libmpp.so
+vendor/lib/libvirtualdisplay.so
+

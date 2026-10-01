@@ -1,0 +1,8 @@
+###FILE###:proprietary-files_R_oss_hwc.txt
+
+# only oss hwc works without quirks - no virtualdisplay support                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      support
+vendor/lib/libhwcutils.so
+vendor/lib/libExynosHWCService.so
+vendor/lib/libexynosdisplay.so
+vendor/lib/libmpp.so
+vendor/lib/libhdmi.so

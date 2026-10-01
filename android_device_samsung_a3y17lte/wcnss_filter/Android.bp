@@ -1,0 +1,15 @@
+// Build the QCA9377 wcnss_filter helper from source.
+cc_binary {
+    name: "wcnss_filter",
+    srcs: ["src/wcnss_filter.c"],
+    shared_libs: [
+        "libcutils",
+        "liblog",
+    ],
+    cflags: [
+        "-Wall",
+        "-Wextra",
+        "-Wno-unused-parameter",
+    ],
+    vendor: true,
+}

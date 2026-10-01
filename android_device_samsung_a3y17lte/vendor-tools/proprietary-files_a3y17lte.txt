@@ -1,0 +1,26 @@
+# mcRegistry a3y17lte
+
+# WiFi
+system/etc/firmware/bdwlan30.bin:vendor/firmware/bdwlan30.bin
+system/etc/firmware/bdwlan32.bin:vendor/firmware/bdwlan32.bin
+system/etc/firmware/otp30.bin:vendor/firmware/otp30.bin
+system/etc/firmware/qwlan30.bin:vendor/firmware/qwlan30.bin
+system/etc/firmware/qwlan30_ibss.bin:vendor/firmware/qwlan30_ibss.bin
+system/etc/firmware/utf30.bin:vendor/firmware/utf30.bin
+system/etc/firmware/utfbd30.bin:vendor/firmware/utfbd30.bin
+system/etc/firmware/utfbd32.bin:vendor/firmware/utfbd32.bin
+
+# Bluetooth
+system/etc/firmware/nvm_tlv_tf_1.1.bin:vendor/etc/firmware/nvm_tlv_tf_1.1.bin
+system/etc/firmware/rampatch_tlv_tf_1.1.tlv:vendor/etc/firmware/rampatch_tlv_tf_1.1.tlv
+
+# Camera
+system/vendor/firmware/fimc_is_lib.bin:vendor/firmware/fimc_is_lib.bin
+system/vendor/firmware/setfile_imx219.bin:vendor/firmware/setfile_imx219.bin
+system/vendor/firmware/setfile_imx258.bin:vendor/firmware/setfile_imx258.bin
+
+# Sensors
+-system/lib/hw/sensors.universal7870.so:vendor/lib/hw/sensors.universal7870.so
+
+# Misc data
+system/etc/firmware/Data.msc:vendor/firmware/Data.msc
