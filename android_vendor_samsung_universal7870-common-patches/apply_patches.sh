@@ -49,6 +49,7 @@ declare -A PATCH_MAP=(
     ["packages/modules/NetworkStack"]="packages/modules/NetworkStack"
     ["system/bpf"]="system/bpf"
     ["system/core"]="system/core"
+    ["system/memory/lmkd"]="system/memory/lmkd"
     ["system/netd"]="system/netd"
     ["system/security"]="system/security"
 )
