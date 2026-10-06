@@ -1,0 +1,126 @@
+From ce1030f3f98ac3f9243d8dfd5e52e97b9daed8d9 Mon Sep 17 00:00:00 2001
+From: Arena Agent <agent@arena.ai>
+Date: Fri, 2 Oct 2026 15:00:00 +0000
+Subject: [PATCH] lmkd: support zoneinfo without per-node statistics
+
+Android 15's zoneinfo parser requires a "per-node stats" section. Linux
+3.18 exposes the file LRU counters in each zone instead, so every zone
+is skipped and memory-pressure handling fails with:
+
+  /proc/zoneinfo parse error
+  Failed to get free memory!
+
+Detect the legacy format before tokenization and sum each zone's file
+LRU counters into the node totals. Preserve the per-node path on newer
+kernels to avoid counting file pages twice. Guard truncated node headers
+and the zone-array bound while parsing either format.
+
+Based on AOSP android-15.0.0_r32, lmkd.cpp blob
+54129c77941992d66a04c3d91b0085f9210bb50b.
+---
+ lmkd.cpp | 49 +++++++++++++++++++++++++++++++++++++-----------
+ 1 file changed, 39 insertions(+), 10 deletions(-)
+
+diff --git a/lmkd.cpp b/lmkd.cpp
+index 54129c779419..4feb95321f73 100644
+--- a/lmkd.cpp
++++ b/lmkd.cpp
+@@ -1749,7 +1749,8 @@
+     zone->max_protection = max;
+ }
+ 
+-static int zoneinfo_parse_zone(char **buf, struct zoneinfo_zone *zone) {
++static int zoneinfo_parse_zone(char **buf, struct zoneinfo_zone *zone,
++                               union zoneinfo_node_fields *legacy_node_fields) {
+     for (char *line = strtok_r(NULL, "\n", buf); line;
+          line = strtok_r(NULL, "\n", buf)) {
+         char *cp;
+@@ -1783,6 +1784,19 @@
+         ap = strtok_r(NULL, " ", &save_ptr);
+         if (!ap) {
+             continue;
++        }
++
++        if (legacy_node_fields) {
++            /* Before Linux 4.8 the file LRU counters were per-zone, not per-node. */
++            match_res = match_field(cp, ap, zoneinfo_node_field_names, ZI_NODE_FIELD_COUNT,
++                &val, &field_idx);
++            if (match_res == PARSE_FAIL) {
++                return false;
++            }
++            if (match_res == PARSE_SUCCESS) {
++                legacy_node_fields->arr[field_idx] += val;
++                continue;
++            }
+         }
+ 
+         match_res = match_field(cp, ap, zoneinfo_zone_field_names, ZI_ZONE_FIELD_COUNT,
+@@ -1851,25 +1865,35 @@
+     struct zoneinfo_node *node = NULL;
+     int node_idx = 0;
+     int zone_idx = 0;
++    bool has_node_stats;
+ 
+     memset(zi, 0, sizeof(struct zoneinfo));
+ 
+     if ((buf = reread_file(&file_data)) == NULL) {
+         return -1;
+     }
++
++    /* Detect the format before strtok_r modifies the buffer. Legacy kernels
++     * have no per-node marker, so their file LRU counters must be summed over
++     * all zones. Do not sum the per-zone counters on kernels with node stats.
++     */
++    has_node_stats = strstr(buf, NODE_STATS_MARKER) != NULL;
+ 
+     for (line = strtok_r(buf, "\n", &save_ptr); line;
+          line = strtok_r(NULL, "\n", &save_ptr)) {
+         int node_id;
+         if (sscanf(line, "Node %d, zone %" STRINGIFY(LINE_MAX) "s", &node_id, zone_name) == 2) {
+             if (!node || node->id != node_id) {
+-                line = strtok_r(NULL, "\n", &save_ptr);
+-                if (strncmp(line, NODE_STATS_MARKER, strlen(NODE_STATS_MARKER)) != 0) {
+-                    /*
+-                     * per-node stats are only present in the first non-empty zone of
+-                     * the node.
+-                     */
+-                    continue;
++                if (has_node_stats) {
++                    line = strtok_r(NULL, "\n", &save_ptr);
++                    if (!line) {
++                        ALOGE("%s parse error", file_data.filename);
++                        return -1;
++                    }
++                    if (strncmp(line, NODE_STATS_MARKER, strlen(NODE_STATS_MARKER)) != 0) {
++                        /* Per-node stats are only present in the first non-empty zone. */
++                        continue;
++                    }
+                 }
+ 
+                 /* new node is found */
+@@ -1885,7 +1909,7 @@
+                 node = &zi->nodes[node_idx];
+                 node->id = node_id;
+                 zone_idx = 0;
+-                if (!zoneinfo_parse_node(&save_ptr, node)) {
++                if (has_node_stats && !zoneinfo_parse_node(&save_ptr, node)) {
+                     ALOGE("%s parse error", file_data.filename);
+                     return -1;
+                 }
+@@ -1893,7 +1917,12 @@
+                 /* new zone is found */
+                 zone_idx++;
+             }
+-            if (!zoneinfo_parse_zone(&save_ptr, &node->zones[zone_idx])) {
++            if (zone_idx == MAX_NR_ZONES) {
++                ALOGE("%s parse error: too many zones", file_data.filename);
++                return -1;
++            }
++            if (!zoneinfo_parse_zone(&save_ptr, &node->zones[zone_idx],
++                    has_node_stats ? NULL : &node->fields)) {
+                 ALOGE("%s parse error", file_data.filename);
+                 return -1;
+             }
+-- 
+2.51.0
+

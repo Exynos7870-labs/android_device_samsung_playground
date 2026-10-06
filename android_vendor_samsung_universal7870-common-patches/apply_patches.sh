@@ -38,6 +38,7 @@ REPO_ROOT=$(get_repo_root 2>/dev/null || echo "")
 # Mapping from patch directory (relative to this repo) to repo project path
 declare -A PATCH_MAP=(
     ["build/make"]="build/make"
+    ["build/soong"]="build/soong"
     ["frameworks/av"]="frameworks/av"
     ["frameworks/base"]="frameworks/base"
     ["frameworks/native"]="frameworks/native"
@@ -48,6 +49,7 @@ declare -A PATCH_MAP=(
     ["packages/modules/NetworkStack"]="packages/modules/NetworkStack"
     ["system/bpf"]="system/bpf"
     ["system/core"]="system/core"
+    ["system/memory/lmkd"]="system/memory/lmkd"
     ["system/netd"]="system/netd"
     ["system/security"]="system/security"
 )
